@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>华为工龄计算器 · Editorial 版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Editorial / Magazine 风格
+     色板仅使用：Paper #F4EFE6 / Deep #EFE8DC / Ink #26221C /
+     Body #5C554A / Rust #8C4A26 / Rule #D8CDB9 / Tint #E9E1D3
+     以及规范 3.3 指定的输入框下划线色 #C9BAA1。
+     所有圆角为 0，无阴影，无渐变。
+     ============================================================ */
+  :root {
+    --paper: #F4EFE6;
+    --paper-deep: #EFE8DC;
+    --ink: #26221C;
+    --body: #5C554A;
+    --rust: #8C4A26;
+    --rust-hover: #7E4222;   /* rust 加深 10% */
+    --rust-active: #703B1F;  /* active 再深一档 */
+    --rule: #D8CDB9;
+    --tint: #E9E1D3;
+    --input-line: #C9BAA1;
+
+    --serif: "Playfair Display", Georgia, "Songti SC", "STSong", serif;
+    --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; border-radius: 0; }
+
+  html { background: var(--paper); }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 纸感：只用 Ink 低透明度颗粒，不引入色板外颜色 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: .5;
+    background-image:
+      radial-gradient(rgba(38, 34, 28, 0.05) 0.5px, transparent 0.6px),
+      radial-gradient(rgba(38, 34, 28, 0.035) 0.5px, transparent 0.6px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 2px 3px;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 32px 56px;
+  }
+
+  /* ---------- 通用元素 ---------- */
+  .rule { height: 1px; background: var(--rule); border: 0; margin: 0; }
+
+  .label {
+    display: block;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--body);
+  }
+
+  /* ---------- 报头 ---------- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 14px;
+  }
+  .brand {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .brand .sep { color: var(--rust); padding: 0 8px; }
+  .issue { font-family: var(--sans); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--body); }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 44px 0 34px; }
+  .kicker {
+    margin: 0 0 20px;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--rust);
+  }
+  h1 {
+    margin: 0 0 22px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(38px, 6.2vw, 68px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--ink); }
+  .standfirst {
+    margin: 0;
+    max-width: 58ch;
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--body);
+    text-align: left;
+  }
+
+  /* ---------- 两栏网格 ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 56px;
+    padding-top: 34px;
+  }
+
+  /* ---------- 左侧正文 ---------- */
+  .lead {
+    margin: 0 0 40px;
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--body);
+    text-align: left;
+    max-width: 66ch;
+  }
+  .lead::first-letter {
+    float: left;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 3.4em;
+    line-height: 0.86;
+    padding: 6px 10px 0 0;
+    color: var(--ink);
+  }
+
+  /* ---------- 表单 ---------- */
+  .field { margin-bottom: 36px; }
+  .field .label { margin-bottom: 4px; }
+
+  input[type="date"] {
+    display: block;
+    width: 100%;
+    max-width: 340px;
+    border: 0;
+    border-bottom: 1px solid var(--input-line);
+    background: transparent;
+    padding: 14px 0 12px;
+    font-family: var(--serif);
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .18s ease;
+    color-scheme: light;
+  }
+  input[type="date"]:hover { border-bottom-color: var(--rust); }
+  input[type="date"]:focus { border-bottom-color: var(--rust); }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: .45;
+    cursor: pointer;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: .8; }
+
+  .error {
+    margin: 10px 0 0;
+    min-height: 16px;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rust);
+    opacity: 0;
+    transition: opacity .18s ease;
+  }
+  .error.show { opacity: 1; }
+
+  .btn {
+    display: inline-block;
+    margin-top: 26px;
+    padding: 14px 26px;
+    border: 0;
+    background: var(--rust);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color .18s ease;
+  }
+  .btn:hover { background: var(--rust-hover); }
+  .btn:active { background: var(--rust-active); }
+  .btn:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+
+  /* ---------- 结果 ---------- */
+  .result {
+    background: var(--tint);
+    border: 1px solid var(--rule);
+    padding: 30px 28px 26px;
+  }
+  .result .label { margin-bottom: 18px; }
+  .figure {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    line-height: 1;
+  }
+  .figure .num {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(58px, 9vw, 88px);
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    transition: color .18s ease;
+  }
+  .figure.empty .num { color: var(--body); }
+  .figure .unit {
+    font-family: var(--serif);
+    font-size: 20px;
+    color: var(--rust);
+    letter-spacing: 0.04em;
+  }
+  .caption {
+    margin: 12px 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--body);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 24px;
+    border-top: 1px solid var(--rule);
+  }
+  .stat {
+    padding: 16px 16px 0 0;
+  }
+  .stat + .stat {
+    border-left: 1px solid var(--rule);
+    padding-left: 16px;
+  }
+  .stat .label { margin-bottom: 8px; font-size: 10px; letter-spacing: 0.2em; }
+  .stat b {
+    display: block;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .sub {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 10px;
+    color: var(--body);
+  }
+
+  /* ---------- 右侧栏 ---------- */
+  aside { padding-top: 6px; }
+
+  .pullquote {
+    margin: 0 0 26px;
+    padding: 4px 0 4px 20px;
+    border-left: 1px solid var(--rust);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .pullquote cite {
+    display: block;
+    margin-top: 14px;
+    font-family: var(--sans);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--body);
+  }
+
+  .notes { list-style: none; margin: 0; padding: 0; }
+  .notes li {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 8px;
+    padding: 14px 0;
+    border-top: 1px solid var(--rule);
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--body);
+    text-align: left;
+  }
+  .notes li:last-child { border-bottom: 1px solid var(--rule); }
+  .notes .idx {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--rust);
+    padding-top: 3px;
+  }
+
+  /* ---------- 页脚 ---------- */
+  footer {
+    margin-top: 54px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--body);
+  }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: minmax(0, 1fr); gap: 44px; }
+    aside { border-top: 1px solid var(--rule); padding-top: 30px; }
+  }
+  @media (max-width: 600px) {
+    .page { padding: 28px 20px 40px; }
+    .masthead { flex-direction: column; gap: 6px; }
+    .hero { padding: 32px 0 26px; }
+    .standfirst { font-size: 16px; }
+    .result { padding: 24px 20px 22px; }
+    .stats { grid-template-columns: minmax(0, 1fr); }
+    .stat { padding: 14px 0 0; }
+    .stat + .stat {
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+      padding-left: 0;
+      margin-top: 14px;
+    }
+    .stat:last-child { padding-bottom: 2px; }
+    .pullquote { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <div class="brand">Huawei<span class="sep">/</span>Tenure</div>
+      <div class="issue">Issue No. 01 &nbsp;—&nbsp; 工龄计算</div>
+    </header>
+    <hr class="rule">
+
+    <section class="hero">
+      <p class="kicker">The days we have counted</p>
+      <h1>你在华为，<br><em>已经走过多少天。</em></h1>
+      <p class="standfirst">每一个入职日期，都是一段被折成数字的时间。选好那一天，这里会替你数清从入职到今天的每一个自然日。</p>
+    </section>
+    <hr class="rule">
+
+    <div class="grid">
+      <main>
+        <p class="lead">工龄不只是简历上的一行字。它藏在深夜亮着的屏幕里，藏在一次次评审和交付之间。下面这个小小的计算器，把这段日子换算成最朴素的单位——天。</p>
+
+        <form class="field" id="form" novalidate>
+          <label class="label" for="joinDate">入职日期 &nbsp;/&nbsp; Join date</label>
+          <input type="date" id="joinDate" autocomplete="off">
+          <p class="error" id="error" role="alert"></p>
+          <button class="btn" type="submit">计算我的天数</button>
+        </form>
+
+        <hr class="rule">
+
+        <section class="result" aria-live="polite">
+          <span class="label">Total days &nbsp;/&nbsp; 在华为的总天数</span>
+          <div class="figure empty" id="figure">
+            <span class="num" id="daysNum">—</span>
+            <span class="unit">天</span>
+          </div>
+          <p class="caption" id="caption">等待一个入职日期。</p>
+
+          <div class="stats">
+            <div class="stat">
+              <span class="label">Span</span>
+              <b id="spanValue">—</b>
+              <span class="sub">折合年与月</span>
+            </div>
+            <div class="stat">
+              <span class="label">Start</span>
+              <b id="startValue">—</b>
+              <span class="sub">入职之日</span>
+            </div>
+            <div class="stat">
+              <span class="label">Until</span>
+              <b id="endValue">—</b>
+              <span class="sub">统计截至</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside>
+        <blockquote class="pullquote">
+          “数字会增长，<br>日子不会重来。”
+          <cite>Notes on time</cite>
+        </blockquote>
+
+        <ol class="notes">
+          <li><span class="idx">01</span><span>按自然日计算，入职当天计入在内。</span></li>
+          <li><span class="idx">02</span><span>所有计算都在本地完成，日期不会被上传。</span></li>
+          <li><span class="idx">03</span><span>结果随当前日期实时更新，无需手动刷新。</span></li>
+        </ol>
+      </aside>
+    </div>
+
+    <footer>
+      <span>Huawei Tenure — Editorial Edition</span>
+      <span>Made for counting days</span>
+    </footer>
+  </div>
+
+<script>
+(function () {
+  var form = document.getElementById('form');
+  var input = document.getElementById('joinDate');
+  var errorEl = document.getElementById('error');
+  var figure = document.getElementById('figure');
+  var daysNum = document.getElementById('daysNum');
+  var caption = document.getElementById('caption');
+  var spanValue = document.getElementById('spanValue');
+  var startValue = document.getElementById('startValue');
+  var endValue = document.getElementById('endValue');
+
+  var MS_PER_DAY = 86400000;
+
+  function today() {
+    var n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }
+
+  function parseDate(value) {
+    var p = value.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+
+  function dot(d) {
+    return d.getFullYear() + '.' +
+      String(d.getMonth() + 1).padStart(2, '0') + '.' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function cnDate(d) {
+    return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
+  }
+
+  function splitDate(from, to) {
+    var years = to.getFullYear() - from.getFullYear();
+    var cursor = new Date(from.getFullYear() + years, from.getMonth(), from.getDate());
+    if (cursor > to) {
+      years--;
+      cursor = new Date(from.getFullYear() + years, from.getMonth(), from.getDate());
+    }
+    var months = 0;
+    while (true) {
+      var next = new Date(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+      if (next > to) break;
+      cursor = next;
+      months++;
+    }
+    return { years: years, months: months };
+  }
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.add('show');
+    figure.classList.add('empty');
+    daysNum.textContent = '—';
+    caption.textContent = '等待一个入职日期。';
+    spanValue.textContent = '—';
+    startValue.textContent = '—';
+  }
+
+  function clearError() {
+    errorEl.textContent = '';
+    errorEl.classList.remove('show');
+  }
+
+  function calc() {
+    var todayDate = today();
+    endValue.textContent = dot(todayDate);
+
+    if (!input.value) {
+      showError('请先选择入职日期');
+      return;
+    }
+
+    var join = parseDate(input.value);
+    if (isNaN(join.getTime())) {
+      showError('日期格式不正确');
+      return;
+    }
+    if (join > todayDate) {
+      showError('入职日期不能晚于今天');
+      return;
+    }
+
+    clearError();
+    var total = Math.round((todayDate - join) / MS_PER_DAY) + 1;
+    var span = splitDate(join, todayDate);
+
+    figure.classList.remove('empty');
+    daysNum.textContent = total.toLocaleString('zh-CN');
+    caption.textContent = '截至 ' + cnDate(todayDate) + '，含入职当天。';
+    spanValue.textContent = span.years + ' 年 ' + span.months + ' 个月';
+    startValue.textContent = dot(join);
+  }
+
+  var t = today();
+  input.max = t.getFullYear() + '-' +
+    String(t.getMonth() + 1).padStart(2, '0') + '-' +
+    String(t.getDate()).padStart(2, '0');
+  endValue.textContent = dot(t);
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    calc();
+  });
+  input.addEventListener('input', function () {
+    if (input.value) calc();
+    else showError('请先选择入职日期');
+  });
+})();
+</script>
+</body>
+</html>

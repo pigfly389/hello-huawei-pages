@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>华为工龄计算器</title>
+<style>
+  :root {
+    --hw-red: #cf0a2c;
+    --hw-red-dark: #a30821;
+    --ink: #1f2329;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background:
+      radial-gradient(1200px 500px at 15% -10%, rgba(207,10,44,0.10), transparent 60%),
+      radial-gradient(900px 500px at 110% 110%, rgba(207,10,44,0.08), transparent 55%),
+      var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 36px 32px 32px;
+    box-shadow: 0 1px 2px rgba(16,24,40,0.04),
+                0 16px 40px -12px rgba(16,24,40,0.18);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--hw-red);
+    display: grid;
+    place-items: center;
+    flex: none;
+    box-shadow: 0 6px 14px -6px rgba(207,10,44,0.7);
+  }
+  .brand-mark svg { width: 20px; height: 20px; fill: #fff; }
+  .brand-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    margin: 0 0 26px;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+  }
+  input[type="date"] {
+    width: 100%;
+    height: 50px;
+    padding: 0 14px;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fbfbfc;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    outline: none;
+    transition: border-color .18s, box-shadow .18s, background .18s;
+    cursor: pointer;
+  }
+  input[type="date"]:hover { border-color: #cfd4dc; }
+  input[type="date"]:focus {
+    background: #fff;
+    border-color: var(--hw-red);
+    box-shadow: 0 0 0 4px rgba(207,10,44,0.12);
+  }
+  .error {
+    min-height: 18px;
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    color: var(--hw-red);
+    opacity: 0;
+    transition: opacity .18s;
+  }
+  .error.show { opacity: 1; }
+
+  .result {
+    margin-top: 18px;
+    padding: 26px 22px;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #fff5f6 0%, #fff 65%);
+    border: 1px solid #f4d6dc;
+    text-align: center;
+  }
+  .result-label {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+  .days {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    color: var(--hw-red);
+    line-height: 1;
+  }
+  .days-num {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  .days-unit {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .breakdown {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #f0cdd4;
+    font-size: 13px;
+    color: #8a5a63;
+    line-height: 1.7;
+  }
+  .breakdown b { color: var(--hw-red-dark); font-weight: 700; }
+  .hint {
+    margin: 14px 0 0;
+    font-size: 12px;
+    color: #9aa1ac;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .result.empty .days-num { color: #d6d9de; }
+  @media (max-width: 420px) {
+    .card { padding: 28px 20px 24px; border-radius: 16px; }
+    h1 { font-size: 22px; }
+    .days-num { font-size: 46px; }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 2.6c-.5 2.7-2 4.6-4.4 5.7l-.4.2v5.4c0 3.9 2 6.6 4.8 7.5 2.8-.9 4.8-3.6 4.8-7.5V8.5l-.4-.2C14 7.2 12.5 5.3 12 2.6zM12 6.1c.9 1 2 1.8 3.3 2.4v5.4c0 2.6-1.2 4.5-3.3 5.3-2.1-.8-3.3-2.7-3.3-5.3V8.5C10 7.9 11.1 7.1 12 6.1z"/></svg>
+      </div>
+      <div class="brand-title">HUAWEI · 工龄计算</div>
+    </div>
+
+    <h1>我在华为工作了多久？</h1>
+    <p class="subtitle">选择你的入职日期，帮你算出自入职至今在华为工作的总天数。</p>
+
+    <label for="joinDate">入职日期</label>
+    <input type="date" id="joinDate" autocomplete="off">
+    <p class="error" id="error"></p>
+
+    <section class="result empty" id="result" aria-live="polite">
+      <div class="result-label">截至 <span id="todayLabel">今天</span></div>
+      <div class="days">
+        <span class="days-num" id="daysNum">—</span>
+        <span class="days-unit">天</span>
+      </div>
+      <div class="breakdown" id="breakdown" hidden></div>
+    </section>
+
+    <p class="hint">按自然日计算，包含入职当天；结果实时更新。</p>
+  </main>
+
+<script>
+(function () {
+  var input = document.getElementById('joinDate');
+  var errorEl = document.getElementById('error');
+  var result = document.getElementById('result');
+  var daysNum = document.getElementById('daysNum');
+  var breakdown = document.getElementById('breakdown');
+  var todayLabel = document.getElementById('todayLabel');
+
+  var MS_PER_DAY = 86400000;
+
+  function today() {
+    var n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }
+
+  function parseDate(value) {
+    var p = value.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+
+  function fmt(d) {
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + '年' + m + '月' + day + '日';
+  }
+
+  function splitDate(from, to) {
+    // 完整年数
+    var years = to.getFullYear() - from.getFullYear();
+    var cursor = new Date(from.getFullYear() + years, from.getMonth(), from.getDate());
+    if (cursor > to) {
+      years--;
+      cursor = new Date(from.getFullYear() + years, from.getMonth(), from.getDate());
+    }
+    // 剩余月数
+    var months = 0;
+    while (true) {
+      var next = new Date(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+      if (next > to) break;
+      cursor = next;
+      months++;
+    }
+    return { years: years, months: months };
+  }
+
+  function calc() {
+    var todayDate = today();
+    todayLabel.textContent = fmt(todayDate);
+
+    if (!input.value) {
+      result.classList.add('empty');
+      daysNum.textContent = '—';
+      breakdown.hidden = true;
+      errorEl.textContent = '';
+      errorEl.classList.remove('show');
+      return;
+    }
+
+    var join = parseDate(input.value);
+    if (isNaN(join.getTime())) {
+      errorEl.textContent = '日期格式不正确，请重新选择。';
+      errorEl.classList.add('show');
+      return;
+    }
+    if (join > todayDate) {
+      result.classList.add('empty');
+      daysNum.textContent = '—';
+      breakdown.hidden = true;
+      errorEl.textContent = '入职日期不能晚于今天。';
+      errorEl.classList.add('show');
+      return;
+    }
+    errorEl.textContent = '';
+    errorEl.classList.remove('show');
+
+    var total = Math.round((todayDate - join) / MS_PER_DAY) + 1;
+    result.classList.remove('empty');
+    daysNum.textContent = total.toLocaleString('zh-CN');
+
+    var d = splitDate(join, todayDate);
+    var text = '自 ' + fmt(join) + ' 起，约 <b>' + d.years + '</b> 年 <b>' + d.months + '</b> 个月';
+    breakdown.innerHTML = text;
+    breakdown.hidden = false;
+  }
+
+  var t = today();
+  input.max = t.getFullYear() + '-' +
+    String(t.getMonth() + 1).padStart(2, '0') + '-' +
+    String(t.getDate()).padStart(2, '0');
+  input.value = '';
+
+  input.addEventListener('input', calc);
+  input.addEventListener('change', calc);
+  calc();
+})();
+</script>
+</body>
+</html>
